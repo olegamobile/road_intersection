@@ -198,6 +198,35 @@ fn main() -> Result<(), String> {
             .map_err(|e| e.to_string())?;
         canvas.copy(&texture, None, Some(Rect::new(10, 10, surface.width(), surface.height())))?;
 
+        // New: Static Info Overlay (Colors and Directions)
+        let mut y_offset = 40; // Starting Y position for info, below the vehicle count
+        let text_color = Color::RGB(0, 0, 0); // Black text
+
+        // Colors and Turns Legend
+        let colors_legend_title = "Vehicle Colors (Turn):";
+        let surface = font.render(colors_legend_title).blended(text_color).map_err(|e| e.to_string())?;
+        let texture = textures_creator.create_texture_from_surface(&surface).map_err(|e| e.to_string())?;
+        canvas.copy(&texture, None, Some(Rect::new(10, y_offset as i32, surface.width(), surface.height())))?;
+        y_offset += 20;
+
+        let turns = [
+            ("Left", Color::RGB(255, 255, 0)),    // Yellow
+            ("Right", Color::RGB(0, 255, 255)),   // Cyan
+            ("Straight", Color::RGB(255, 0, 255)), // Magenta
+        ];
+
+        for (turn_name, color) in &turns {
+            canvas.set_draw_color(*color);
+            canvas.fill_rect(Rect::new(10, y_offset as i32, 15, 15))?; // Small square for color
+
+            let info_text = format!(" - {}", turn_name);
+            let surface = font.render(&info_text).blended(text_color).map_err(|e| e.to_string())?;
+            let texture = textures_creator.create_texture_from_surface(&surface).map_err(|e| e.to_string())?;
+            canvas.copy(&texture, None, Some(Rect::new(30, y_offset as i32, surface.width(), surface.height())))?;
+            y_offset += 20;
+        }
+
+
         canvas.present();
         ::std::thread::sleep(Duration::from_millis(16));
     }
