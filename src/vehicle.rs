@@ -1,4 +1,4 @@
-use crate::{Direction, Turn, EASTBOUND_LANE_Y, INTERSECTION_X_END, INTERSECTION_X_START, INTERSECTION_Y_END, INTERSECTION_Y_START, NORTHBOUND_LANE_X, SOUTHBOUND_LANE_X, WESTBOUND_LANE_Y, WINDOW_HEIGHT, WINDOW_WIDTH};
+use crate::{Direction, Turn, EASTBOUND_LANE_Y, INTERSECTION_X_END, INTERSECTION_X_START, INTERSECTION_Y_END, INTERSECTION_Y_START, NORTHBOUND_LANE_X, SOUTHBOUND_LANE_X, WESTBOUND_LANE_Y, WINDOW_HEIGHT, WINDOW_WIDTH, VEHICLE_SIZE};
 
 #[derive(Debug, Clone)]
 pub struct Vehicle {
@@ -55,7 +55,7 @@ pub fn generate_path(dir: Direction, turn: Turn) -> Vec<(i32, i32)> {
         Direction::East => { // from East, going West
             let y = WESTBOUND_LANE_Y;
             path.push((WINDOW_WIDTH as i32 + 20, y));
-            path.push((INTERSECTION_X_END as i32 + 5, y)); // stopping point
+            path.push((INTERSECTION_X_END as i32, y)); // stopping point
             match turn {
                 Turn::Straight => {
                     path.push((-20, y));
@@ -73,7 +73,7 @@ pub fn generate_path(dir: Direction, turn: Turn) -> Vec<(i32, i32)> {
         Direction::West => { // from West, going East
             let y = EASTBOUND_LANE_Y;
             path.push((-20, y));
-            path.push((INTERSECTION_X_START as i32 - 5, y)); // stopping point
+            path.push((INTERSECTION_X_START as i32 - VEHICLE_SIZE as i32, y)); // stopping point
             match turn {
                 Turn::Straight => {
                     path.push((WINDOW_WIDTH as i32 + 20, y));

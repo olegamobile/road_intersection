@@ -86,10 +86,16 @@ impl World {
             let is_green = v.dir == green_dir && !self.controller.all_red_phase;
 
             let at_intersection_border = v.path_index == 1;
+            let in_intersection = v.path_index > 1 && v.path_index < v.path.len() - 1; // Assuming path_index 2 and onwards are in intersection
 
             let mut should_stop = false;
             if at_intersection_border && !is_green {
                 should_stop = true;
+            }
+
+            // If vehicle is already in the intersection, it should not stop for red light
+            if in_intersection {
+                should_stop = false;
             }
 
             if !should_stop {
