@@ -28,7 +28,7 @@ impl TrafficLightController {
     }
 
     /// Update current green direction if enough time has passed
-    pub fn update(&mut self, waiting_vehicles: u32, cars_in_intersection: bool, is_congested: bool) {
+    pub fn update(&mut self, waiting_vehicles: u32, cars_in_intersection: bool, vehicles_on_stop_line: bool, is_congested: bool) {
         let mut should_switch = false;
 
         // Check for immediate switch if no cars are waiting
@@ -57,7 +57,7 @@ impl TrafficLightController {
                     _ => Direction::North, // Fallback, should not happen
                 };
             } else {
-                if cars_in_intersection {
+                if cars_in_intersection || vehicles_on_stop_line {
                     self.last_green_direction = self.current; // Store current green direction
                     self.current = Direction::AllRed;
                     self.phase_duration = Duration::from_secs(2);

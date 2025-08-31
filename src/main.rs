@@ -4,7 +4,7 @@ use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 fn main() -> Result<(), String> {
     let sdl = sdl2::init()?;
@@ -24,6 +24,7 @@ fn main() -> Result<(), String> {
 
     let mut event_pump = sdl.event_pump()?;
     let mut world = World::new();
+    let mut last_spawn_time = Instant::now();
 
     // Load font for overlay
     let font = ttf_context.load_font("assets/fonts/DejaVuSans.ttf", 12)?;
@@ -34,10 +35,30 @@ fn main() -> Result<(), String> {
                 Event::Quit { .. } => break 'running,
                 Event::KeyDown { keycode, .. } => match keycode {
                     Some(Keycode::Escape) => break 'running,
-                    Some(Keycode::Up) => world.spawn_vehicle(Direction::South),
-                    Some(Keycode::Down) => world.spawn_vehicle(Direction::North),
-                    Some(Keycode::Left) => world.spawn_vehicle(Direction::East),
-                    Some(Keycode::Right) => world.spawn_vehicle(Direction::West),
+                    Some(Keycode::Up) => {
+                        if last_spawn_time.elapsed() >= Duration::from_millis(500) {
+                            world.spawn_vehicle(Direction::South);
+                            last_spawn_time = Instant::now();
+                        }
+                    },
+                    Some(Keycode::Down) => {
+                        if last_spawn_time.elapsed() >= Duration::from_millis(500) {
+                            world.spawn_vehicle(Direction::North);
+                            last_spawn_time = Instant::now();
+                        }
+                    },
+                    Some(Keycode::Left) => {
+                        if last_spawn_time.elapsed() >= Duration::from_millis(500) {
+                            world.spawn_vehicle(Direction::East);
+                            last_spawn_time = Instant::now();
+                        }
+                    },
+                    Some(Keycode::Right) => {
+                        if last_spawn_time.elapsed() >= Duration::from_millis(500) {
+                            world.spawn_vehicle(Direction::West);
+                            last_spawn_time = Instant::now();
+                        }
+                    },
                     Some(Keycode::R) => {
                         let mut rng = rand::thread_rng();
                         let random_dir = match rng.gen_range(0..4) {
@@ -46,7 +67,10 @@ fn main() -> Result<(), String> {
                             2 => Direction::East,
                             _ => Direction::West,
                         };
-                        world.spawn_vehicle(random_dir);
+                        if last_spawn_time.elapsed() >= Duration::from_millis(500) {
+                            world.spawn_vehicle(random_dir);
+                            last_spawn_time = Instant::now();
+                        }
                     }
                     _ => {}
                 },

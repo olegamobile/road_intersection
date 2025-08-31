@@ -86,9 +86,41 @@ impl World {
             }
         }
 
+        let mut vehicles_on_stop_line = false;
+        for v in &self.vehicles {
+            match v.dir {
+                Direction::North => { // Southbound lane, approaching from North
+                    if v.y <= INTERSECTION_Y_START as i32 && v.y + VEHICLE_SIZE as i32 > INTERSECTION_Y_START as i32 {
+                        vehicles_on_stop_line = true;
+                        break;
+                    }
+                },
+                Direction::South => { // Northbound lane, approaching from South
+                    if v.y + VEHICLE_SIZE as i32 >= INTERSECTION_Y_END as i32 && v.y < INTERSECTION_Y_END as i32 {
+                        vehicles_on_stop_line = true;
+                        break;
+                    }
+                },
+                Direction::East => { // Westbound lane, approaching from East
+                    if v.x <= INTERSECTION_X_START as i32 && v.x + VEHICLE_SIZE as i32 > INTERSECTION_X_START as i32 {
+                        vehicles_on_stop_line = true;
+                        break;
+                    }
+                },
+                Direction::West => { // Eastbound lane, approaching from West
+                    if v.x + VEHICLE_SIZE as i32 >= INTERSECTION_X_END as i32 && v.x < INTERSECTION_X_END as i32 {
+                        vehicles_on_stop_line = true;
+                        break;
+                    }
+                },
+                _ => {}
+            }
+        }
+
         self.controller.update(
             waiting_vehicles,
             cars_in_intersection,
+            vehicles_on_stop_line,
             self.is_congested(self.controller.current),
         );
 
