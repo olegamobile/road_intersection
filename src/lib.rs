@@ -58,6 +58,13 @@ impl World {
     }
 
     pub fn update(&mut self) {
+        if self.vehicles.len() == 0 {
+            if self.controller.current != Direction::AllRed {
+                self.controller.current = Direction::AllRed;
+            }
+            return;
+        }
+
         let mut waiting_vehicles = 0;
         for v in &self.vehicles {
             if v.dir == self.controller.current {
