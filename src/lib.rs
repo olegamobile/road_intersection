@@ -142,7 +142,7 @@ impl World {
             }
         }
         self.vehicles
-            .retain(|v| v.x > -40 && v.x < WINDOW_WIDTH as i32 + 40 && v.y > -40 && v.y < WINDOW_HEIGHT as i32 + 40);
+            .retain(|v| v.x > -20 && v.x < WINDOW_WIDTH as i32 +20 && v.y > -20 && v.y < WINDOW_HEIGHT as i32 + 20);
     }
 
     pub fn spawn_vehicle(&mut self, dir: Direction) {
