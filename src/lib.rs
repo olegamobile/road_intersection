@@ -1,5 +1,4 @@
 use std::time::{Duration, Instant};
-use std::thread::sleep;
 
 /// Directions of approach to the intersection
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
