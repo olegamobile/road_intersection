@@ -1,13 +1,17 @@
 use std::time::{Duration, Instant};
 use crate::Direction;
 
+const MAX_PHASE_DURATION: Duration = Duration::from_secs(30);
+
 /// Traffic light controller: cycles through 4 directions in order
 pub struct TrafficLightController {
     pub current: Direction,
     phase_duration: Duration,
     last_switch: Instant,
     base_phase_duration: Duration,
+    max_phase_duration: Duration, // Added for fair distribution
     last_car_cleared_time: Option<Instant>,
+    last_green_direction: Direction, // To remember the last green phase before AllRed
 }
 
 impl TrafficLightController {
@@ -17,7 +21,9 @@ impl TrafficLightController {
             phase_duration: Duration::from_secs(phase_secs),
             last_switch: Instant::now(),
             base_phase_duration: Duration::from_secs(phase_secs),
+            max_phase_duration: MAX_PHASE_DURATION, // Initialize maximum phase duration
             last_car_cleared_time: None,
+            last_green_direction: Direction::West, // Initialize to West so North is the first green
         }
     }
 
@@ -36,24 +42,33 @@ impl TrafficLightController {
             self.last_car_cleared_time = None;
         }
 
-        if should_switch || self.last_switch.elapsed() >= self.phase_duration {
+        // Force switch if max_phase_duration is reached, for fairness
+        if should_switch || self.last_switch.elapsed() >= self.phase_duration || self.last_switch.elapsed() >= self.max_phase_duration {
             self.last_switch = Instant::now();
             self.last_car_cleared_time = None; // Reset timer after switch
 
             if self.current == Direction::AllRed {
-                self.current = Direction::North; // Start with North after AllRed
+                // After AllRed, transition to the next phase in sequence
+                self.current = match self.last_green_direction {
+                    Direction::North => Direction::South,
+                    Direction::South => Direction::East,
+                    Direction::East => Direction::West,
+                    Direction::West => Direction::North,
+                    _ => Direction::North, // Fallback, should not happen
+                };
             } else {
                 if cars_in_intersection {
+                    self.last_green_direction = self.current; // Store current green direction
                     self.current = Direction::AllRed;
                     self.phase_duration = Duration::from_secs(2);
-                    return; // Return early to avoid changing direction
+                    // No return here, allow the cycle to continue after AllRed
                 } else {
                     self.current = match self.current {
                         Direction::North => Direction::South,
                         Direction::South => Direction::East,
                         Direction::East => Direction::West,
                         Direction::West => Direction::North,
-                        Direction::AllRed => Direction::North, // Should not happen if logic is correct
+                        _ => Direction::North, // Should not happen if logic is correct
                     };
                 }
             }

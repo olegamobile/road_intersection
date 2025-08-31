@@ -162,8 +162,7 @@ fn main() -> Result<(), String> {
         // Overlay: show variables
         let textures_creator = canvas.texture_creator();
         let overlay_text = format!(
-            "Current green: {:?}, Vehicles: {}",
-            green_dir,
+            "Vehicles: {}",
             world.vehicles.len()
         );
         let surface = font
