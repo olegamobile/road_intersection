@@ -67,43 +67,30 @@ fn main() -> Result<(), String> {
         canvas.fill_rect(Rect::new(0, ROAD_Y as i32, WINDOW_WIDTH, ROAD_WIDTH))?;
 
         // Draw lanes and labels
-        let textures_creator = canvas.texture_creator();
 
         // Northbound Lane (South to North)
         let rect_northbound = Rect::new(NORTHBOUND_LANE_X - (ROAD_WIDTH / 4) as i32, 0, ROAD_WIDTH / 2, WINDOW_HEIGHT);
         canvas.set_draw_color(Color::RGB(120, 120, 120)); // Slightly lighter gray
         canvas.fill_rect(rect_northbound)?;
-        let label_northbound = format!("N: ({},{})", rect_northbound.x(), rect_northbound.y());
-        let surface_northbound = font.render(&label_northbound).blended(Color::RGB(255, 255, 255)).map_err(|e| e.to_string())?;
-        let texture_northbound = textures_creator.create_texture_from_surface(&surface_northbound).map_err(|e| e.to_string())?;
-        canvas.copy(&texture_northbound, None, Some(Rect::new(rect_northbound.x() + 5, rect_northbound.y() + 5, surface_northbound.width(), surface_northbound.height())))?;
+        
 
         // Southbound Lane (North to South)
         let rect_southbound = Rect::new(SOUTHBOUND_LANE_X - (ROAD_WIDTH / 4) as i32, 0, ROAD_WIDTH / 2, WINDOW_HEIGHT);
         canvas.set_draw_color(Color::RGB(120, 120, 120));
         canvas.fill_rect(rect_southbound)?;
-        let label_southbound = format!("S: ({},{})", rect_southbound.x(), rect_southbound.y());
-        let surface_southbound = font.render(&label_southbound).blended(Color::RGB(255, 255, 255)).map_err(|e| e.to_string())?;
-        let texture_southbound = textures_creator.create_texture_from_surface(&surface_southbound).map_err(|e| e.to_string())?;
-        canvas.copy(&texture_southbound, None, Some(Rect::new(rect_southbound.x() + 5, rect_southbound.y() + WINDOW_HEIGHT as i32 - 20, surface_southbound.width(), surface_southbound.height())))?;
+        
 
         // Eastbound Lane (West to East)
         let rect_eastbound = Rect::new(0, EASTBOUND_LANE_Y - (ROAD_WIDTH / 4) as i32, WINDOW_WIDTH, ROAD_WIDTH / 2);
         canvas.set_draw_color(Color::RGB(120, 120, 120));
         canvas.fill_rect(rect_eastbound)?;
-        let label_eastbound = format!("E: ({},{})", rect_eastbound.x(), rect_eastbound.y());
-        let surface_eastbound = font.render(&label_eastbound).blended(Color::RGB(255, 255, 255)).map_err(|e| e.to_string())?;
-        let texture_eastbound = textures_creator.create_texture_from_surface(&surface_eastbound).map_err(|e| e.to_string())?;
-        canvas.copy(&texture_eastbound, None, Some(Rect::new(rect_eastbound.x() + 5, rect_eastbound.y() + 5, surface_eastbound.width(), surface_eastbound.height())))?;
+        
 
         // Westbound Lane (East to West)
         let rect_westbound = Rect::new(0, WESTBOUND_LANE_Y - (ROAD_WIDTH / 4) as i32, WINDOW_WIDTH, ROAD_WIDTH / 2);
         canvas.set_draw_color(Color::RGB(120, 120, 120));
         canvas.fill_rect(rect_westbound)?;
-        let label_westbound = format!("W: ({},{})", rect_westbound.x(), rect_westbound.y());
-        let surface_westbound = font.render(&label_westbound).blended(Color::RGB(255, 255, 255)).map_err(|e| e.to_string())?;
-        let texture_westbound = textures_creator.create_texture_from_surface(&surface_westbound).map_err(|e| e.to_string())?;
-        canvas.copy(&texture_westbound, None, Some(Rect::new(rect_westbound.x() + WINDOW_WIDTH as i32 - 50, rect_westbound.y() + 5, surface_westbound.width(), surface_westbound.height())))?;
+        
 
         // Draw lane dividers
         canvas.set_draw_color(Color::RGB(255, 255, 255));

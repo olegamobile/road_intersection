@@ -199,11 +199,11 @@ impl World {
         let (lane_length, num_vehicles) = match dir {
             Direction::North | Direction::South => (
                 ROAD_Y,
-                self.vehicles.iter().filter(|v| v.dir == dir && v.path_index <= 1).count() as u32,
+                self.vehicles.iter().filter(|v| v.dir == dir).count() as u32,
             ),
             Direction::East | Direction::West => (
                 ROAD_X,
-                self.vehicles.iter().filter(|v| v.dir == dir && v.path_index <= 1).count() as u32,
+                self.vehicles.iter().filter(|v| v.dir == dir).count() as u32,
             ),
         };
         let capacity = lane_length / (VEHICLE_SIZE + VEHICLE_SAFETY_GAP);
