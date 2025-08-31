@@ -1,9 +1,9 @@
-pub mod vehicle;
 pub mod traffic_light;
+pub mod vehicle;
 
 use rand::Rng;
-use vehicle::{Vehicle, generate_path};
 use traffic_light::TrafficLightController;
+use vehicle::{Vehicle, generate_path};
 
 pub const WINDOW_WIDTH: u32 = 800;
 pub const WINDOW_HEIGHT: u32 = 600;
@@ -68,14 +68,21 @@ impl World {
 
         let mut cars_in_intersection = false;
         for v in &self.vehicles {
-            if v.x < INTERSECTION_X_END as i32 && v.x + VEHICLE_SIZE as i32 > INTERSECTION_X_START as i32 &&
-               v.y < INTERSECTION_Y_END as i32 && v.y + VEHICLE_SIZE as i32 > INTERSECTION_Y_START as i32 {
+            if v.x < INTERSECTION_X_END as i32
+                && v.x + VEHICLE_SIZE as i32 > INTERSECTION_X_START as i32
+                && v.y < INTERSECTION_Y_END as i32
+                && v.y + VEHICLE_SIZE as i32 > INTERSECTION_Y_START as i32
+            {
                 cars_in_intersection = true;
                 break;
             }
         }
 
-        self.controller.update(waiting_vehicles, cars_in_intersection, self.is_congested(self.controller.current));
+        self.controller.update(
+            waiting_vehicles,
+            cars_in_intersection,
+            self.is_congested(self.controller.current),
+        );
 
         let vehicles_clone = self.vehicles.clone();
         for v in &mut self.vehicles {
@@ -85,44 +92,47 @@ impl World {
             let green_dir = self.controller.current;
             let is_green = v.dir == green_dir && !self.controller.all_red_phase;
 
-            let at_intersection_border = v.path_index == 1;
-            let in_intersection = v.path_index > 1 && v.path_index < v.path.len() - 1; // Assuming path_index 2 and onwards are in intersection
+            let in_intersection = v.x < INTERSECTION_X_END as i32
+                && v.x + VEHICLE_SIZE as i32 > INTERSECTION_X_START as i32
+                && v.y < INTERSECTION_Y_END as i32
+                && v.y + VEHICLE_SIZE as i32 > INTERSECTION_Y_START as i32;
 
-            let mut should_stop = false;
+            let at_intersection_border = v.path_index == 1 && !in_intersection;
+            let mut stop_for_light = false;
             if at_intersection_border && !is_green {
-                should_stop = true;
+                stop_for_light = true;
             }
 
             // If vehicle is already in the intersection, it should not stop for red light
             if in_intersection {
-                should_stop = false;
+                stop_for_light = false;
             }
 
-            if !should_stop {
-                let mut can_move = true;
-                if v.path_index < v.path.len() -1 { // Only check for collisions before and at the intersection
-                    let next_pos = v.path[v.path_index + 1];
-                    let next_x = v.x + (next_pos.0 - v.x).signum() * 5;
-                    let next_y = v.y + (next_pos.1 - v.y).signum() * 5;
+            let mut stop_for_collision = false;
+            if v.path_index < v.path.len() - 1 {
+                // Only check for collisions before and at the intersection
+                let next_pos = v.path[v.path_index + 1];
+                let next_x = v.x + (next_pos.0 - v.x).signum() * 5;
+                let next_y = v.y + (next_pos.1 - v.y).signum() * 5;
 
-                    for other in &vehicles_clone {
-                        if v.id == other.id { continue; }
+                for other in &vehicles_clone {
+                    if v.id == other.id {
+                        continue;
+                    }
 
-                        // Bounding box collision detection with safety gap
-                        if next_x < other.x + (VEHICLE_SIZE + VEHICLE_SAFETY_GAP) as i32 &&
-                           next_x + (VEHICLE_SIZE + VEHICLE_SAFETY_GAP) as i32 > other.x &&
-                           next_y < other.y + (VEHICLE_SIZE + VEHICLE_SAFETY_GAP) as i32 &&
-                           next_y + (VEHICLE_SIZE + VEHICLE_SAFETY_GAP) as i32 > other.y {
-                            can_move = false;
-                            break;
-                        }
+                    // Bounding box collision detection with safety gap
+                    if next_x < other.x + (VEHICLE_SIZE + VEHICLE_SAFETY_GAP) as i32
+                        && next_x + (VEHICLE_SIZE + VEHICLE_SAFETY_GAP) as i32 > other.x
+                        && next_y < other.y + (VEHICLE_SIZE + VEHICLE_SAFETY_GAP) as i32
+                        && next_y + (VEHICLE_SIZE + VEHICLE_SAFETY_GAP) as i32 > other.y
+                    {
+                        stop_for_collision = true;
+                        break;
                     }
                 }
-                if !can_move {
-                    should_stop = true;
-                }
             }
 
+            let should_stop = stop_for_light || stop_for_collision;
 
             if !should_stop {
                 if v.path_index < v.path.len() - 1 {
@@ -141,8 +151,12 @@ impl World {
                 }
             }
         }
-        self.vehicles
-            .retain(|v| v.x > -20 && v.x < WINDOW_WIDTH as i32 +20 && v.y > -20 && v.y < WINDOW_HEIGHT as i32 + 20);
+        self.vehicles.retain(|v| {
+            v.x > -20
+                && v.x < WINDOW_WIDTH as i32 + 20
+                && v.y > -20
+                && v.y < WINDOW_HEIGHT as i32 + 20
+        });
     }
 
     pub fn spawn_vehicle(&mut self, dir: Direction) {
@@ -161,7 +175,9 @@ impl World {
 
         if let Some(last_vehicle) = self.vehicles.iter().filter(|v| v.dir == dir).last() {
             let dist_sq = (x - last_vehicle.x).pow(2) + (y - last_vehicle.y).pow(2);
-            if dist_sq < ((VEHICLE_SIZE + VEHICLE_SAFETY_GAP) * (VEHICLE_SIZE + VEHICLE_SAFETY_GAP)) as i32 {
+            if dist_sq
+                < ((VEHICLE_SIZE + VEHICLE_SAFETY_GAP) * (VEHICLE_SIZE + VEHICLE_SAFETY_GAP)) as i32
+            {
                 return;
             }
         }

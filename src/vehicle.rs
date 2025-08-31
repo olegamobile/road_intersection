@@ -27,6 +27,7 @@ pub fn generate_path(dir: Direction, turn: Turn) -> Vec<(i32, i32)> {
             path.push((x, INTERSECTION_Y_START as i32 - VEHICLE_SIZE as i32 - 5)); // stopping point
             match turn {
                 Turn::Straight => {
+                    path.push((x, INTERSECTION_Y_START as i32 + 1));
                     path.push((x, WINDOW_HEIGHT as i32 + VEHICLE_SIZE as i32));
                 }
                 Turn::Left => {
@@ -48,6 +49,7 @@ pub fn generate_path(dir: Direction, turn: Turn) -> Vec<(i32, i32)> {
             path.push((x, INTERSECTION_Y_END as i32 + 5)); // stopping point
             match turn {
                 Turn::Straight => {
+                    path.push((x, INTERSECTION_Y_END as i32 - 1));
                     path.push((x, -(VEHICLE_SIZE as i32)));
                 }
                 Turn::Left => {
@@ -69,6 +71,7 @@ pub fn generate_path(dir: Direction, turn: Turn) -> Vec<(i32, i32)> {
             path.push((INTERSECTION_X_END as i32 + 5, y)); // stopping point
             match turn {
                 Turn::Straight => {
+                    path.push((INTERSECTION_X_END as i32 - 1, y));
                     path.push((-(VEHICLE_SIZE as i32), y));
                 }
                 Turn::Left => {
@@ -93,6 +96,7 @@ pub fn generate_path(dir: Direction, turn: Turn) -> Vec<(i32, i32)> {
             path.push((INTERSECTION_X_START as i32 - VEHICLE_SIZE as i32 - 5, y)); // stopping point
             match turn {
                 Turn::Straight => {
+                    path.push((INTERSECTION_X_START as i32 + 1, y));
                     path.push((WINDOW_WIDTH as i32 + VEHICLE_SIZE as i32, y));
                 }
                 Turn::Left => {
