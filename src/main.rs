@@ -1,5 +1,5 @@
 use rand::Rng;
-use road_intersection::{Direction, Turn, World};
+use road_intersection::{Direction, Turn, World, WINDOW_WIDTH, WINDOW_HEIGHT, ROAD_WIDTH, ROAD_X, ROAD_Y, INTERSECTION_X_START, INTERSECTION_Y_START, INTERSECTION_X_END, INTERSECTION_Y_END, SOUTHBOUND_LANE_X, NORTHBOUND_LANE_X, WESTBOUND_LANE_Y, EASTBOUND_LANE_Y};
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
@@ -12,7 +12,7 @@ fn main() -> Result<(), String> {
     let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
 
     let window = video
-        .window("Road Intersection", 800, 600)
+        .window("Road Intersection", WINDOW_WIDTH, WINDOW_HEIGHT)
         .position_centered()
         .build()
         .map_err(|e| e.to_string())?;
@@ -61,50 +61,41 @@ fn main() -> Result<(), String> {
         canvas.set_draw_color(Color::RGB(200, 200, 200));
         canvas.clear();
 
-        // Draw grid
-        canvas.set_draw_color(Color::RGB(150, 150, 150));
-        for i in 0..16 {
-            canvas.draw_line((i * 50, 0), (i * 50, 600))?;
-        }
-        for i in 0..12 {
-            canvas.draw_line((0, i * 50), (800, i * 50))?;
-        }
-
         // Draw roads
         canvas.set_draw_color(Color::RGB(100, 100, 100));
-        let road_width = 100;
-        canvas.fill_rect(Rect::new(350, 0, road_width, 600))?;
-        canvas.fill_rect(Rect::new(0, 250, 800, road_width))?;
+        canvas.fill_rect(Rect::new(ROAD_X as i32, 0, ROAD_WIDTH, WINDOW_HEIGHT))?;
+        canvas.fill_rect(Rect::new(0, ROAD_Y as i32, WINDOW_WIDTH, ROAD_WIDTH))?;
 
         // Draw lane dividers
         canvas.set_draw_color(Color::RGB(255, 255, 255));
         for i in 0..15 {
             // Horizontal road
-            if i * 60 + 30 < 350 || i * 60 > 450 {
-                canvas.fill_rect(Rect::new(i * 60, 298, 30, 4))?;
+            if i * 60 + 30 < ROAD_X as i32 || i * 60 > (ROAD_X + ROAD_WIDTH) as i32 {
+                canvas.fill_rect(Rect::new(i * 60, (ROAD_Y + ROAD_WIDTH / 2 - 2) as i32, 30, 4))?;
             }
             // Vertical road
-            if i * 40 + 20 < 250 || i * 40 > 350 {
-                canvas.fill_rect(Rect::new(398, i * 40, 4, 20))?;
+            if i * 40 + 20 < ROAD_Y as i32 || i * 40 > (ROAD_Y + ROAD_WIDTH) as i32 {
+                canvas.fill_rect(Rect::new((ROAD_X + ROAD_WIDTH / 2 - 2) as i32, i * 40, 4, 20))?;
             }
         }
 
         // Draw intersection borders and stopping lines
         canvas.set_draw_color(Color::RGB(200, 200, 200)); // Light gray for intersection outline
-        canvas.draw_rect(Rect::new(350, 250, 100, 100))?;
+        canvas.draw_rect(Rect::new(INTERSECTION_X_START as i32, INTERSECTION_Y_START as i32, ROAD_WIDTH, ROAD_WIDTH))?;
 
         canvas.set_draw_color(Color::RGB(255, 255, 255)); // White for stopping lines
         // North
-        canvas.fill_rect(Rect::new(350, 245, 50, 5))?;
+        canvas.fill_rect(Rect::new(SOUTHBOUND_LANE_X - 25, INTERSECTION_Y_START as i32 - 5, 50, 5))?;
         // South
-        canvas.fill_rect(Rect::new(400, 350, 50, 5))?;
+        canvas.fill_rect(Rect::new(NORTHBOUND_LANE_X - 25, INTERSECTION_Y_END as i32, 50, 5))?;
         // East
-        canvas.fill_rect(Rect::new(450, 250, 5, 50))?;
+        canvas.fill_rect(Rect::new(INTERSECTION_X_END as i32, WESTBOUND_LANE_Y - 25, 5, 50))?;
         // West
-        canvas.fill_rect(Rect::new(345, 300, 5, 50))?;
+        canvas.fill_rect(Rect::new(INTERSECTION_X_START as i32 - 5, EASTBOUND_LANE_Y - 25, 5, 50))?;
 
         // Draw traffic lights
         let green_dir = world.controller.current;
+        let all_red = world.controller.all_red_phase;
         for dir in [
             Direction::North,
             Direction::South,
@@ -113,16 +104,20 @@ fn main() -> Result<(), String> {
         ]
         {
             let (x, y) = match dir {
-                Direction::North => (325, 225),
-                Direction::South => (455, 355),
-                Direction::East => (455, 225),
-                Direction::West => (325, 355),
+                Direction::North => (SOUTHBOUND_LANE_X - 25, INTERSECTION_Y_START as i32 - 25),
+                Direction::South => (NORTHBOUND_LANE_X + 5, INTERSECTION_Y_END as i32 + 5),
+                Direction::East => (INTERSECTION_X_END as i32 + 5, WESTBOUND_LANE_Y - 25),
+                Direction::West => (INTERSECTION_X_START as i32 - 25, EASTBOUND_LANE_Y + 5),
             };
+            if all_red {
+                canvas.set_draw_color(Color::RGB(255, 0, 0));
+            } else {
                 if dir == green_dir {
                     canvas.set_draw_color(Color::RGB(0, 255, 0));
                 } else {
                     canvas.set_draw_color(Color::RGB(255, 0, 0));
                 }
+            }
             canvas.fill_rect(Rect::new(x, y, 20, 20))?;
         }
 
@@ -137,38 +132,8 @@ fn main() -> Result<(), String> {
             canvas.fill_rect(Rect::new(v.x, v.y, 20, 20))?;
         }
 
-        // Draw grid labels and turning points
-        let textures_creator = canvas.texture_creator();
-        for i in 1..8 {
-            let x = i * 100;
-            let label_text = format!("{}", x);
-            let surface = font.render(&label_text).blended(Color::RGB(0, 0, 0)).map_err(|e| e.to_string())?;
-            let texture = textures_creator.create_texture_from_surface(&surface).map_err(|e| e.to_string())?;
-            canvas.copy(&texture, None, Some(Rect::new(x, 0, surface.width(), surface.height())))?;
-        }
-        for i in 1..6 {
-            let y = i * 100;
-            let label_text = format!("{}", y);
-            let surface = font.render(&label_text).blended(Color::RGB(0, 0, 0)).map_err(|e| e.to_string())?;
-            let texture = textures_creator.create_texture_from_surface(&surface).map_err(|e| e.to_string())?;
-            canvas.copy(&texture, None, Some(Rect::new(0, y, surface.width(), surface.height())))?;
-        }
-
-        for v in &world.vehicles {
-            if v.turn != Turn::Straight {
-                if v.path.len() > 2 {
-                    let turning_point = v.path[2];
-                    canvas.set_draw_color(Color::RGB(255, 0, 0));
-                    canvas.fill_rect(Rect::new(turning_point.0 - 2, turning_point.1 - 2, 4, 4))?;
-                    let label_text = format!("({}, {})", turning_point.0, turning_point.1);
-                    let surface = font.render(&label_text).blended(Color::RGB(255, 0, 0)).map_err(|e| e.to_string())?;
-                    let texture = textures_creator.create_texture_from_surface(&surface).map_err(|e| e.to_string())?;
-                    canvas.copy(&texture, None, Some(Rect::new(turning_point.0 + 5, turning_point.1, surface.width(), surface.height())))?;
-                }
-            }
-        }
-
         // Overlay: show variables
+        let textures_creator = canvas.texture_creator();
         let overlay_text = format!(
             "Current green: {:?}, Vehicles: {}",
             green_dir,
