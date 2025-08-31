@@ -8,6 +8,7 @@ pub struct TrafficLightController {
     phase_duration: Duration,
     last_switch: Instant,
     base_phase_duration: Duration,
+    last_car_cleared_time: Option<Instant>,
 }
 
 impl TrafficLightController {
@@ -18,13 +19,28 @@ impl TrafficLightController {
             phase_duration: Duration::from_secs(phase_secs),
             last_switch: Instant::now(),
             base_phase_duration: Duration::from_secs(phase_secs),
+            last_car_cleared_time: None,
         }
     }
 
     /// Update current green direction if enough time has passed
     pub fn update(&mut self, waiting_vehicles: u32, cars_in_intersection: bool, is_congested: bool) {
-        if self.last_switch.elapsed() >= self.phase_duration {
+        let mut should_switch = false;
+
+        // Check for immediate switch if no cars are waiting
+        if waiting_vehicles == 0 {
+            if self.last_car_cleared_time.is_none() {
+                self.last_car_cleared_time = Some(Instant::now());
+            } else if self.last_car_cleared_time.unwrap().elapsed() >= Duration::from_millis(500) {
+                should_switch = true;
+            }
+        } else {
+            self.last_car_cleared_time = None;
+        }
+
+        if should_switch || self.last_switch.elapsed() >= self.phase_duration {
             self.last_switch = Instant::now();
+            self.last_car_cleared_time = None; // Reset timer after switch
 
             if self.all_red_phase {
                 self.all_red_phase = false;
