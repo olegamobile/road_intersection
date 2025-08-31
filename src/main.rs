@@ -121,7 +121,7 @@ fn main() -> Result<(), String> {
 
         // Draw traffic lights
         let green_dir = world.controller.current;
-        let all_red = world.controller.all_red_phase;
+        let all_red = world.controller.current == Direction::AllRed;
         for dir in [
             Direction::North,
             Direction::South,
@@ -134,6 +134,7 @@ fn main() -> Result<(), String> {
                 Direction::South => (NORTHBOUND_LANE_X + 30, INTERSECTION_Y_END as i32 + 5),
                 Direction::East => (INTERSECTION_X_END as i32 + 5, WESTBOUND_LANE_Y - 50),
                 Direction::West => (INTERSECTION_X_START as i32 - 25, EASTBOUND_LANE_Y + 30),
+                Direction::AllRed => (0, 0), // Placeholder, will be handled by all_red color below
             };
             if all_red {
                 canvas.set_draw_color(Color::RGB(255, 0, 0));

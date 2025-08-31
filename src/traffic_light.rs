@@ -4,7 +4,6 @@ use crate::Direction;
 /// Traffic light controller: cycles through 4 directions in order
 pub struct TrafficLightController {
     pub current: Direction,
-    pub all_red_phase: bool,
     phase_duration: Duration,
     last_switch: Instant,
     base_phase_duration: Duration,
@@ -15,7 +14,6 @@ impl TrafficLightController {
     pub fn new(phase_secs: u64) -> Self {
         Self {
             current: Direction::North,
-            all_red_phase: false,
             phase_duration: Duration::from_secs(phase_secs),
             last_switch: Instant::now(),
             base_phase_duration: Duration::from_secs(phase_secs),
@@ -42,17 +40,11 @@ impl TrafficLightController {
             self.last_switch = Instant::now();
             self.last_car_cleared_time = None; // Reset timer after switch
 
-            if self.all_red_phase {
-                self.all_red_phase = false;
-                self.current = match self.current {
-                    Direction::North => Direction::South,
-                    Direction::South => Direction::East,
-                    Direction::East => Direction::West,
-                    Direction::West => Direction::North,
-                };
+            if self.current == Direction::AllRed {
+                self.current = Direction::North; // Start with North after AllRed
             } else {
                 if cars_in_intersection {
-                    self.all_red_phase = true;
+                    self.current = Direction::AllRed;
                     self.phase_duration = Duration::from_secs(2);
                     return; // Return early to avoid changing direction
                 } else {
@@ -61,6 +53,7 @@ impl TrafficLightController {
                         Direction::South => Direction::East,
                         Direction::East => Direction::West,
                         Direction::West => Direction::North,
+                        Direction::AllRed => Direction::North, // Should not happen if logic is correct
                     };
                 }
             }

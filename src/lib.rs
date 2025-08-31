@@ -32,6 +32,7 @@ pub enum Direction {
     South,
     East,
     West,
+    AllRed,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -90,7 +91,7 @@ impl World {
                 continue;
             }
             let green_dir = self.controller.current;
-            let is_green = v.dir == green_dir && !self.controller.all_red_phase;
+            let is_green = v.dir == green_dir && self.controller.current != Direction::AllRed;
 
             let in_intersection = v.x < INTERSECTION_X_END as i32
                 && v.x + VEHICLE_SIZE as i32 > INTERSECTION_X_START as i32
@@ -199,12 +200,13 @@ impl World {
         let (lane_length, num_vehicles) = match dir {
             Direction::North | Direction::South => (
                 ROAD_Y,
-                self.vehicles.iter().filter(|v| v.dir == dir).count() as u32,
+                self.vehicles.iter().filter(|v| v.dir == dir && v.path_index <= 1).count() as u32,
             ),
             Direction::East | Direction::West => (
                 ROAD_X,
-                self.vehicles.iter().filter(|v| v.dir == dir).count() as u32,
+                self.vehicles.iter().filter(|v| v.dir == dir && v.path_index <= 1).count() as u32,
             ),
+            Direction::AllRed => (0, 0),
         };
         let capacity = lane_length / (VEHICLE_SIZE + VEHICLE_SAFETY_GAP);
         num_vehicles >= capacity
