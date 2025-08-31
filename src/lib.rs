@@ -25,7 +25,7 @@ pub const WESTBOUND_LANE_Y: i32 = (ROAD_Y + ROAD_WIDTH / 2 + ROAD_Y) as i32 / 2;
 pub const VEHICLE_SIZE: u32 = 20;
 pub const VEHICLE_SAFETY_GAP: u32 = 10;
 
-/// Directions of approach to the intersection
+// Directions of approach to the intersection
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Direction {
     North,

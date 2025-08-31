@@ -1,9 +1,9 @@
 use std::time::{Duration, Instant};
 use crate::Direction;
 
-const MAX_PHASE_DURATION: Duration = Duration::from_secs(30);
+const MAX_PHASE_DURATION: Duration = Duration::from_secs(5); // Maximum duration for each green light phase
 
-/// Traffic light controller: cycles through 4 directions in order
+// Traffic light controller: cycles through 4 directions in order
 pub struct TrafficLightController {
     pub current: Direction,
     last_switch: Instant,
@@ -33,7 +33,7 @@ impl TrafficLightController {
         }
     }
 
-    /// Update current green direction if enough time has passed
+    // Update current green direction if enough time has passed
     pub fn update(&mut self, waiting_vehicles: u32, cars_in_intersection: bool, vehicles_on_stop_line: bool, _is_congested: bool) {
         // Rule 3: If there are no cars waiting to cross the intersection in the desired direction in 500ms switch to the next phase
         let no_cars_waiting_for_current_green = waiting_vehicles == 0;
