@@ -20,6 +20,7 @@ pub enum Turn {
 /// Traffic light controller: cycles through 4 directions in order
 pub struct TrafficLightController {
     pub current: Direction,
+    pub all_red_phase: bool,
     phase_duration: Duration,
     last_switch: Instant,
     base_phase_duration: Duration,
@@ -29,6 +30,7 @@ impl TrafficLightController {
     pub fn new(phase_secs: u64) -> Self {
         Self {
             current: Direction::North,
+            all_red_phase: false,
             phase_duration: Duration::from_secs(phase_secs),
             last_switch: Instant::now(),
             base_phase_duration: Duration::from_secs(phase_secs),
@@ -36,31 +38,51 @@ impl TrafficLightController {
     }
 
     /// Update current green direction if enough time has passed
-    pub fn update(&mut self, waiting_vehicles: u32) {
+    pub fn update(&mut self, waiting_vehicles: u32, cars_in_intersection: bool) {
         if self.last_switch.elapsed() >= self.phase_duration {
-            self.current = match self.current {
-                Direction::North => Direction::South,
-                Direction::South => Direction::East,
-                Direction::East => Direction::West,
-                Direction::West => Direction::North,
-            };
             self.last_switch = Instant::now();
 
-            if waiting_vehicles > 5 {
-                self.phase_duration = self.base_phase_duration + Duration::from_secs(2);
-            } else if waiting_vehicles == 0 {
-                self.phase_duration = self.base_phase_duration.saturating_sub(Duration::from_secs(1));
-                if self.phase_duration < Duration::from_secs(1) {
-                    self.phase_duration = Duration::from_secs(1);
+            if self.all_red_phase {
+                self.all_red_phase = false;
+                self.current = match self.current {
+                    Direction::North => Direction::South,
+                    Direction::South => Direction::East,
+                    Direction::East => Direction::West,
+                    Direction::West => Direction::North,
+                };
+                if waiting_vehicles > 5 {
+                    self.phase_duration = self.base_phase_duration + Duration::from_secs(2);
+                } else if waiting_vehicles == 0 {
+                    self.phase_duration = self.base_phase_duration.saturating_sub(Duration::from_secs(1));
+                    if self.phase_duration < Duration::from_secs(1) {
+                        self.phase_duration = Duration::from_secs(1);
+                    }
+                } else {
+                    self.phase_duration = self.base_phase_duration;
                 }
             } else {
-                self.phase_duration = self.base_phase_duration;
+                if cars_in_intersection {
+                    self.all_red_phase = true;
+                    self.phase_duration = Duration::from_secs(2);
+                } else {
+                    self.current = match self.current {
+                        Direction::North => Direction::South,
+                        Direction::South => Direction::East,
+                        Direction::East => Direction::West,
+                        Direction::West => Direction::North,
+                    };
+                    if waiting_vehicles > 5 {
+                        self.phase_duration = self.base_phase_duration + Duration::from_secs(2);
+                    } else if waiting_vehicles == 0 {
+                        self.phase_duration = self.base_phase_duration.saturating_sub(Duration::from_secs(1));
+                        if self.phase_duration < Duration::from_secs(1) {
+                            self.phase_duration = Duration::from_secs(1);
+                        }
+                    } else {
+                        self.phase_duration = self.base_phase_duration;
+                    }
+                }
             }
-            println!(
-                "Green direction now: {:?}, duration: {:?}",
-                self.current,
-                self.phase_duration
-            );
         }
     }
 }
@@ -128,12 +150,12 @@ fn generate_path(dir: Direction, turn: Turn) -> Vec<(i32, i32)> {
                     path.push((-20, y));
                 }
                 Turn::Left => { // Turn left to go South
-                    path.push((375, y));
-                    path.push((375, 620));
+                    path.push((425, y));
+                    path.push((425, 620));
                 }
                 Turn::Right => { // Turn right to go North
-                    path.push((425, y));
-                    path.push((425, -20));
+                    path.push((375, y));
+                    path.push((375, -20));
                 }
             }
         }
@@ -145,17 +167,18 @@ fn generate_path(dir: Direction, turn: Turn) -> Vec<(i32, i32)> {
                 Turn::Straight => {
                     path.push((820, y));
                 }
-                Turn::Left => { // Turn left to go North
-                    path.push((375, y));
-                    path.push((375, 620));
-                }
-                Turn::Right => { // Turn right to go South
+                Turn::Left => { // Turn left to go South
                     path.push((425, y));
-                    path.push((425, -20));
+                    path.push((425, 620));
+                }
+                Turn::Right => { // Turn right to go North
+                    path.push((375, y));
+                    path.push((375, -20));
                 }
             }
         }
     }
+    print!("{:?} {:?} -> {:?}\n", dir, turn, path);
     path
 }
 
@@ -184,7 +207,18 @@ impl World {
             }
         }
 
-        self.controller.update(waiting_vehicles);
+        let mut cars_in_intersection = false;
+        let intersection_x = (350, 450);
+        let intersection_y = (250, 350);
+        for v in &self.vehicles {
+            if v.x < intersection_x.1 && v.x + 20 > intersection_x.0 &&
+               v.y < intersection_y.1 && v.y + 20 > intersection_y.0 {
+                cars_in_intersection = true;
+                break;
+            }
+        }
+
+        self.controller.update(waiting_vehicles, cars_in_intersection);
 
         let vehicles_clone = self.vehicles.clone();
         for v in &mut self.vehicles {
@@ -192,37 +226,47 @@ impl World {
                 continue;
             }
             let green_dir = self.controller.current;
-            let is_green = v.dir == green_dir;
+            let is_green = v.dir == green_dir && !self.controller.all_red_phase;
 
             let at_intersection_border = v.path_index == 1;
 
-            let mut can_move = true;
-            if v.path_index < 2 { // Only check for collisions before and at the intersection
-                for other in &vehicles_clone {
-                    if v.id == other.id { continue; }
+            let mut should_stop = false;
+            if at_intersection_border && !is_green {
+                should_stop = true;
+            }
 
-                    let my_next_pos = if v.path_index + 1 < v.path.len() {
-                        v.path[v.path_index + 1]
-                    } else {
-                        (v.x, v.y)
-                    };
+            if !should_stop {
+                let mut can_move = true;
+                if v.path_index < 2 { // Only check for collisions before and at the intersection
+                    for other in &vehicles_clone {
+                        if v.id == other.id { continue; }
 
-                    // Simple distance check
-                    let dist_sq = (v.x - other.x).pow(2) + (v.y - other.y).pow(2);
-                    if dist_sq < 400 { // 20*20
-                        // Check if other vehicle is in front
-                        let (dx, dy) = (my_next_pos.0 - v.x, my_next_pos.1 - v.y);
-                        let (odx, ody) = (other.x - v.x, other.y - v.y);
-                        if dx * odx + dy * ody > 0 {
-                            can_move = false;
-                            break;
+                        let my_next_pos = if v.path_index + 1 < v.path.len() {
+                            v.path[v.path_index + 1]
+                        } else {
+                            (v.x, v.y)
+                        };
+
+                        // Simple distance check
+                        let dist_sq = (v.x - other.x).pow(2) + (v.y - other.y).pow(2);
+                        if dist_sq < 400 { // 20*20
+                            // Check if other vehicle is in front
+                            let (dx, dy) = (my_next_pos.0 - v.x, my_next_pos.1 - v.y);
+                            let (odx, ody) = (other.x - v.x, other.y - v.y);
+                            if dx * odx + dy * ody > 0 {
+                                can_move = false;
+                                break;
+                            }
                         }
                     }
+                }
+                if !can_move {
+                    should_stop = true;
                 }
             }
 
 
-            if can_move && (is_green || !at_intersection_border) {
+            if !should_stop {
                 if v.path_index < v.path.len() - 1 {
                     let target = v.path[v.path_index + 1];
                     let dx = target.0 - v.x;

@@ -114,15 +114,15 @@ fn main() -> Result<(), String> {
         {
             let (x, y) = match dir {
                 Direction::North => (325, 225),
-                Direction::South => (455, 375),
-                Direction::East => (475, 225),
-                Direction::West => (325, 325),
+                Direction::South => (455, 355),
+                Direction::East => (455, 225),
+                Direction::West => (325, 355),
             };
-            if dir == green_dir {
-                canvas.set_draw_color(Color::RGB(0, 255, 0));
-            } else {
-                canvas.set_draw_color(Color::RGB(255, 0, 0));
-            }
+                if dir == green_dir {
+                    canvas.set_draw_color(Color::RGB(0, 255, 0));
+                } else {
+                    canvas.set_draw_color(Color::RGB(255, 0, 0));
+                }
             canvas.fill_rect(Rect::new(x, y, 20, 20))?;
         }
 
