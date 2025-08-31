@@ -102,11 +102,11 @@ impl World {
                     for other in &vehicles_clone {
                         if v.id == other.id { continue; }
 
-                        // Bounding box collision detection
-                        if next_x < other.x + VEHICLE_SIZE as i32 &&
-                           next_x + VEHICLE_SIZE as i32 > other.x &&
-                           next_y < other.y + VEHICLE_SIZE as i32 &&
-                           next_y + VEHICLE_SIZE as i32 > other.y {
+                        // Bounding box collision detection with safety gap
+                        if next_x < other.x + (VEHICLE_SIZE + VEHICLE_SAFETY_GAP) as i32 &&
+                           next_x + (VEHICLE_SIZE + VEHICLE_SAFETY_GAP) as i32 > other.x &&
+                           next_y < other.y + (VEHICLE_SIZE + VEHICLE_SAFETY_GAP) as i32 &&
+                           next_y + (VEHICLE_SIZE + VEHICLE_SAFETY_GAP) as i32 > other.y {
                             can_move = false;
                             break;
                         }
