@@ -6,84 +6,70 @@ const MAX_PHASE_DURATION: Duration = Duration::from_secs(30);
 /// Traffic light controller: cycles through 4 directions in order
 pub struct TrafficLightController {
     pub current: Direction,
-    phase_duration: Duration,
     last_switch: Instant,
-    base_phase_duration: Duration,
-    max_phase_duration: Duration, // Added for fair distribution
+    max_phase_duration: Duration,
     last_car_cleared_time: Option<Instant>,
-    last_green_direction: Direction, // To remember the last green phase before AllRed
+    last_green_direction: Direction,
 }
 
 impl TrafficLightController {
-    pub fn new(phase_secs: u64) -> Self {
+    pub fn new() -> Self {
         Self {
             current: Direction::North,
-            phase_duration: Duration::from_secs(phase_secs),
             last_switch: Instant::now(),
-            base_phase_duration: Duration::from_secs(phase_secs),
             max_phase_duration: MAX_PHASE_DURATION, // Initialize maximum phase duration
             last_car_cleared_time: None,
             last_green_direction: Direction::West, // Initialize to West so North is the first green
         }
     }
 
-    /// Update current green direction if enough time has passed
-    pub fn update(&mut self, waiting_vehicles: u32, cars_in_intersection: bool, vehicles_on_stop_line: bool, is_congested: bool) {
-        let mut should_switch = false;
+    fn next_green_direction(&self) -> Direction {
+        match self.last_green_direction {
+            Direction::North => Direction::South,
+            Direction::South => Direction::East,
+            Direction::East => Direction::West,
+            Direction::West => Direction::North,
+            _ => Direction::North, // Fallback, should not happen
+        }
+    }
 
-        // Check for immediate switch if no cars are waiting
-        if waiting_vehicles == 0 {
-            if self.last_car_cleared_time.is_none() {
-                self.last_car_cleared_time = Some(Instant::now());
-            } else if self.last_car_cleared_time.unwrap().elapsed() >= Duration::from_millis(500) {
-                should_switch = true;
-            }
-        } else {
+    /// Update current green direction if enough time has passed
+    pub fn update(&mut self, waiting_vehicles: u32, cars_in_intersection: bool, vehicles_on_stop_line: bool, _is_congested: bool) {
+        // Rule 3: If there are no cars waiting to cross the intersection in the desired direction in 500ms switch to the next phase
+        let no_cars_waiting_for_current_green = waiting_vehicles == 0;
+        if no_cars_waiting_for_current_green && self.last_car_cleared_time.is_none() {
+            self.last_car_cleared_time = Some(Instant::now());
+        } else if !no_cars_waiting_for_current_green {
             self.last_car_cleared_time = None;
         }
 
-        // Force switch if max_phase_duration is reached, for fairness
-        if should_switch || self.last_switch.elapsed() >= self.phase_duration || self.last_switch.elapsed() >= self.max_phase_duration {
-            self.last_switch = Instant::now();
-            self.last_car_cleared_time = None; // Reset timer after switch
+        let time_since_last_car_cleared = self.last_car_cleared_time.map_or(Duration::MAX, |t| t.elapsed());
+        let should_switch_due_to_no_cars = no_cars_waiting_for_current_green && time_since_last_car_cleared >= Duration::from_millis(500);
 
-            if self.current == Direction::AllRed {
-                // After AllRed, transition to the next phase in sequence
-                self.current = match self.last_green_direction {
-                    Direction::North => Direction::South,
-                    Direction::South => Direction::East,
-                    Direction::East => Direction::West,
-                    Direction::West => Direction::North,
-                    _ => Direction::North, // Fallback, should not happen
-                };
-            } else {
-                if cars_in_intersection || vehicles_on_stop_line {
-                    self.last_green_direction = self.current; // Store current green direction
-                    self.current = Direction::AllRed;
-                    self.phase_duration = Duration::from_secs(2);
-                    // No return here, allow the cycle to continue after AllRed
-                } else {
-                    self.current = match self.current {
-                        Direction::North => Direction::South,
-                        Direction::South => Direction::East,
-                        Direction::East => Direction::West,
-                        Direction::West => Direction::North,
-                        _ => Direction::North, // Should not happen if logic is correct
-                    };
-                }
+        // Rule 2: Use max time for phase const
+        let max_phase_duration_reached = self.last_switch.elapsed() >= self.max_phase_duration;
+
+        let should_switch = should_switch_due_to_no_cars || max_phase_duration_reached;
+
+        if self.current == Direction::AllRed {
+            if !cars_in_intersection {
+                self.last_green_direction = self.next_green_direction(); // Update last_green_direction before setting current
+                self.current = self.last_green_direction;
+                self.last_switch = Instant::now();
+                self.last_car_cleared_time = None;
             }
-
-            if is_congested {
-                self.phase_duration = self.base_phase_duration + Duration::from_secs(5);
-            } else if waiting_vehicles > 5 {
-                self.phase_duration = self.base_phase_duration + Duration::from_secs(2);
-            } else if waiting_vehicles == 0 {
-                self.phase_duration = self.base_phase_duration.saturating_sub(Duration::from_secs(1));
-                if self.phase_duration < Duration::from_secs(1) {
-                    self.phase_duration = Duration::from_secs(1);
-                }
+        } else if should_switch {
+            if cars_in_intersection || vehicles_on_stop_line {
+                // Rule 4: If its time to switch to the next phase but there are cars on the intersection switch to AllRed.
+                self.last_green_direction = self.current; // Store current green direction
+                self.current = Direction::AllRed;
+                self.last_switch = Instant::now();
+                self.last_car_cleared_time = None;
             } else {
-                self.phase_duration = self.base_phase_duration;
+                self.last_green_direction = self.current; // Store current green direction
+                self.current = self.next_green_direction();
+                self.last_switch = Instant::now();
+                self.last_car_cleared_time = None;
             }
         }
     }

@@ -52,19 +52,12 @@ impl World {
     pub fn new() -> Self {
         Self {
             vehicles: Vec::new(),
-            controller: TrafficLightController::new(3),
+            controller: TrafficLightController::new(),
             next_id: 0,
         }
     }
 
-    pub fn update(&mut self) {
-        if self.vehicles.len() == 0 {
-            if self.controller.current != Direction::AllRed {
-                self.controller.current = Direction::AllRed;
-            }
-            return;
-        }
-
+    fn count_waiting_vehicles(&self) -> u32 {
         let mut waiting_vehicles = 0;
         for v in &self.vehicles {
             if v.dir == self.controller.current {
@@ -73,57 +66,52 @@ impl World {
                 }
             }
         }
+        waiting_vehicles
+    }
 
-        let mut cars_in_intersection = false;
+    fn check_cars_in_intersection(&self) -> bool {
         for v in &self.vehicles {
             if v.x < INTERSECTION_X_END as i32
                 && v.x + VEHICLE_SIZE as i32 > INTERSECTION_X_START as i32
                 && v.y < INTERSECTION_Y_END as i32
                 && v.y + VEHICLE_SIZE as i32 > INTERSECTION_Y_START as i32
             {
-                cars_in_intersection = true;
-                break;
+                return true;
             }
         }
+        false
+    }
 
-        let mut vehicles_on_stop_line = false;
+    fn check_vehicles_on_stop_line(&self) -> bool {
         for v in &self.vehicles {
             match v.dir {
                 Direction::North => { // Southbound lane, approaching from North
                     if v.y <= INTERSECTION_Y_START as i32 && v.y + VEHICLE_SIZE as i32 > INTERSECTION_Y_START as i32 {
-                        vehicles_on_stop_line = true;
-                        break;
+                        return true;
                     }
                 },
                 Direction::South => { // Northbound lane, approaching from South
                     if v.y + VEHICLE_SIZE as i32 >= INTERSECTION_Y_END as i32 && v.y < INTERSECTION_Y_END as i32 {
-                        vehicles_on_stop_line = true;
-                        break;
+                        return true;
                     }
                 },
                 Direction::East => { // Westbound lane, approaching from East
                     if v.x <= INTERSECTION_X_START as i32 && v.x + VEHICLE_SIZE as i32 > INTERSECTION_X_START as i32 {
-                        vehicles_on_stop_line = true;
-                        break;
+                        return true;
                     }
                 },
                 Direction::West => { // Eastbound lane, approaching from West
                     if v.x + VEHICLE_SIZE as i32 >= INTERSECTION_X_END as i32 && v.x < INTERSECTION_X_END as i32 {
-                        vehicles_on_stop_line = true;
-                        break;
+                        return true;
                     }
                 },
                 _ => {}
             }
         }
+        false
+    }
 
-        self.controller.update(
-            waiting_vehicles,
-            cars_in_intersection,
-            vehicles_on_stop_line,
-            self.is_congested(self.controller.current),
-        );
-
+    fn update_vehicle_positions(&mut self) {
         let vehicles_clone = self.vehicles.clone();
         for v in &mut self.vehicles {
             if v.passed {
@@ -150,7 +138,7 @@ impl World {
 
             let mut stop_for_collision = false;
             if v.path_index < v.path.len() - 1 {
-                // Only check for collisions before and at the intersection
+                // Only check for collisions before and at the intersection - after that vehicles can move freely
                 let next_pos = v.path[v.path_index + 1];
                 let next_x = v.x + (next_pos.0 - v.x).signum() * 5;
                 let next_y = v.y + (next_pos.1 - v.y).signum() * 5;
@@ -191,6 +179,27 @@ impl World {
                 }
             }
         }
+    }
+
+    pub fn update(&mut self) {
+        if self.vehicles.is_empty() {
+            self.controller.current = Direction::AllRed;
+            return;
+        }
+
+        let waiting_vehicles = self.count_waiting_vehicles();
+        let cars_in_intersection = self.check_cars_in_intersection();
+        let vehicles_on_stop_line = self.check_vehicles_on_stop_line();
+
+        self.controller.update(
+            waiting_vehicles,
+            cars_in_intersection,
+            vehicles_on_stop_line,
+            self.is_congested(self.controller.current),
+        );
+
+        self.update_vehicle_positions();
+
         self.vehicles.retain(|v| {
             v.x > -20
                 && v.x < WINDOW_WIDTH as i32 + 20
