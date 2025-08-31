@@ -104,10 +104,10 @@ fn main() -> Result<(), String> {
         ]
         {
             let (x, y) = match dir {
-                Direction::North => (SOUTHBOUND_LANE_X - 25, INTERSECTION_Y_START as i32 - 25),
-                Direction::South => (NORTHBOUND_LANE_X + 5, INTERSECTION_Y_END as i32 + 5),
-                Direction::East => (INTERSECTION_X_END as i32 + 5, WESTBOUND_LANE_Y - 25),
-                Direction::West => (INTERSECTION_X_START as i32 - 25, EASTBOUND_LANE_Y + 5),
+                Direction::North => (SOUTHBOUND_LANE_X - 50, INTERSECTION_Y_START as i32 - 25),
+                Direction::South => (NORTHBOUND_LANE_X + 30, INTERSECTION_Y_END as i32 + 5),
+                Direction::East => (INTERSECTION_X_END as i32 + 5, WESTBOUND_LANE_Y - 50),
+                Direction::West => (INTERSECTION_X_START as i32 - 25, EASTBOUND_LANE_Y + 30),
             };
             if all_red {
                 canvas.set_draw_color(Color::RGB(255, 0, 0));
