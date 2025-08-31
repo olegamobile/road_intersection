@@ -26,7 +26,7 @@ fn main() -> Result<(), String> {
     let mut world = World::new();
 
     // Load font for overlay
-    let font = ttf_context.load_font("assets/fonts/DejaVuSans.ttf", 16)?;
+    let font = ttf_context.load_font("assets/fonts/DejaVuSans.ttf", 12)?;
 
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -61,6 +61,15 @@ fn main() -> Result<(), String> {
         canvas.set_draw_color(Color::RGB(200, 200, 200));
         canvas.clear();
 
+        // Draw grid
+        canvas.set_draw_color(Color::RGB(150, 150, 150));
+        for i in 0..16 {
+            canvas.draw_line((i * 50, 0), (i * 50, 600))?;
+        }
+        for i in 0..12 {
+            canvas.draw_line((0, i * 50), (800, i * 50))?;
+        }
+
         // Draw roads
         canvas.set_draw_color(Color::RGB(100, 100, 100));
         let road_width = 100;
@@ -80,6 +89,20 @@ fn main() -> Result<(), String> {
             }
         }
 
+        // Draw intersection borders and stopping lines
+        canvas.set_draw_color(Color::RGB(200, 200, 200)); // Light gray for intersection outline
+        canvas.draw_rect(Rect::new(350, 250, 100, 100))?;
+
+        canvas.set_draw_color(Color::RGB(255, 255, 255)); // White for stopping lines
+        // North
+        canvas.fill_rect(Rect::new(350, 245, 50, 5))?;
+        // South
+        canvas.fill_rect(Rect::new(400, 350, 50, 5))?;
+        // East
+        canvas.fill_rect(Rect::new(450, 250, 5, 50))?;
+        // West
+        canvas.fill_rect(Rect::new(345, 300, 5, 50))?;
+
         // Draw traffic lights
         let green_dir = world.controller.current;
         for dir in [
@@ -90,10 +113,10 @@ fn main() -> Result<(), String> {
         ]
         {
             let (x, y) = match dir {
-                Direction::North => (400, 240),
-                Direction::South => (400, 360),
-                Direction::East => (460, 300),
-                Direction::West => (340, 300),
+                Direction::North => (325, 225),
+                Direction::South => (455, 375),
+                Direction::East => (475, 225),
+                Direction::West => (325, 325),
             };
             if dir == green_dir {
                 canvas.set_draw_color(Color::RGB(0, 255, 0));
@@ -114,9 +137,38 @@ fn main() -> Result<(), String> {
             canvas.fill_rect(Rect::new(v.x, v.y, 20, 20))?;
         }
 
-        // Overlay: show variables
-        canvas.set_draw_color(Color::RGB(0, 0, 0));
+        // Draw grid labels and turning points
         let textures_creator = canvas.texture_creator();
+        for i in 1..8 {
+            let x = i * 100;
+            let label_text = format!("{}", x);
+            let surface = font.render(&label_text).blended(Color::RGB(0, 0, 0)).map_err(|e| e.to_string())?;
+            let texture = textures_creator.create_texture_from_surface(&surface).map_err(|e| e.to_string())?;
+            canvas.copy(&texture, None, Some(Rect::new(x, 0, surface.width(), surface.height())))?;
+        }
+        for i in 1..6 {
+            let y = i * 100;
+            let label_text = format!("{}", y);
+            let surface = font.render(&label_text).blended(Color::RGB(0, 0, 0)).map_err(|e| e.to_string())?;
+            let texture = textures_creator.create_texture_from_surface(&surface).map_err(|e| e.to_string())?;
+            canvas.copy(&texture, None, Some(Rect::new(0, y, surface.width(), surface.height())))?;
+        }
+
+        for v in &world.vehicles {
+            if v.turn != Turn::Straight {
+                if v.path.len() > 2 {
+                    let turning_point = v.path[2];
+                    canvas.set_draw_color(Color::RGB(255, 0, 0));
+                    canvas.fill_rect(Rect::new(turning_point.0 - 2, turning_point.1 - 2, 4, 4))?;
+                    let label_text = format!("({}, {})", turning_point.0, turning_point.1);
+                    let surface = font.render(&label_text).blended(Color::RGB(255, 0, 0)).map_err(|e| e.to_string())?;
+                    let texture = textures_creator.create_texture_from_surface(&surface).map_err(|e| e.to_string())?;
+                    canvas.copy(&texture, None, Some(Rect::new(turning_point.0 + 5, turning_point.1, surface.width(), surface.height())))?;
+                }
+            }
+        }
+
+        // Overlay: show variables
         let overlay_text = format!(
             "Current green: {:?}, Vehicles: {}",
             green_dir,
