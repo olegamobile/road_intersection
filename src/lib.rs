@@ -167,12 +167,16 @@ impl World {
                     let target = v.path[v.path_index + 1];
                     let dx = target.0 - v.x;
                     let dy = target.1 - v.y;
-                    let dist = ((dx * dx + dy * dy) as f32).sqrt();
-                    if dist < 5.0 {
+
+                    if dx.abs() < 5 && dy.abs() < 5 {
                         v.path_index += 1;
                     } else {
-                        v.x += (dx as f32 / dist * 5.0) as i32;
-                        v.y += (dy as f32 / dist * 5.0) as i32;
+                        let step = 5;
+                        if dx != 0 {
+                            v.x += dx.signum() * step;
+                        } else if dy != 0 {
+                            v.y += dy.signum() * step;
+                        }
                     }
                 } else {
                     v.passed = true;
