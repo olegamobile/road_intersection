@@ -6,4 +6,5 @@ edition = "2024"
 [dependencies]
 sdl2 = { version = "0.38", features = ["ttf"] }
 rand = "0.8.5"
+sdl = "0.3.6"
 

@@ -31,7 +31,9 @@ This logic aims to balance efficient traffic flow with safety by ensuring the in
 
 1.  **Prerequisites:**
     *   Rust programming language and Cargo (Rust's package manager).
-    *   SDL2 development libraries. On Windows, you might need to download the SDL2 development libraries and place them in a location where Rust can find them (e.g., in your system's `PATH` or in the project directory).
+    *   SDL2 development libraries
+        *   Run ```./prepare.sh``` to install required libraries on MacOS
+        *   On Windows, you might need to download the SDL2 development libraries and place them in a location where Rust can find them (e.g., in your system's `PATH` or in the project directory).
 
 2.  **Build and Run:**
     Navigate to the project root directory in your terminal and run:
