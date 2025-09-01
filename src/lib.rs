@@ -114,11 +114,9 @@ impl World {
     fn update_vehicle_positions(&mut self) {
         let vehicles_clone = self.vehicles.clone();
         for v in &mut self.vehicles {
-            if v.passed {
-                continue;
-            }
+
             let green_dir = self.controller.current;
-            let is_green = v.dir == green_dir && self.controller.current != Direction::AllRed;
+            let is_green = v.dir == green_dir;
 
             let in_intersection = v.x < INTERSECTION_X_END as i32
                 && v.x + VEHICLE_SIZE as i32 > INTERSECTION_X_START as i32
@@ -178,9 +176,7 @@ impl World {
                             v.y += dy.signum() * step;
                         }
                     }
-                } else {
-                    v.passed = true;
-                }
+                } 
             }
         }
     }
@@ -205,10 +201,10 @@ impl World {
         self.update_vehicle_positions();
 
         self.vehicles.retain(|v| {
-            v.x > -20
-                && v.x < WINDOW_WIDTH as i32 + 20
-                && v.y > -20
-                && v.y < WINDOW_HEIGHT as i32 + 20
+            v.x > -(VEHICLE_SIZE as i32)
+                && v.x < WINDOW_WIDTH as i32 + VEHICLE_SIZE as i32
+                && v.y > -(VEHICLE_SIZE as i32)
+                && v.y < WINDOW_HEIGHT as i32 + VEHICLE_SIZE as i32
         });
     }
 
@@ -241,7 +237,6 @@ impl World {
             turn,
             x,
             y,
-            passed: false,
             path,
             path_index: 0,
         });

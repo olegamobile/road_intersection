@@ -11,7 +11,6 @@ pub struct Vehicle {
     pub turn: Turn,
     pub x: i32,
     pub y: i32,
-    pub passed: bool,
     pub path: Vec<(i32, i32)>,
     pub path_index: usize,
 }

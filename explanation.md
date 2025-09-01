@@ -69,7 +69,6 @@ pub struct Vehicle {
     pub turn: Turn,
     pub x: i32,
     pub y: i32,
-    pub passed: bool,
     pub path: Vec<(i32, i32)>,
     pub path_index: usize,
 }
@@ -79,7 +78,6 @@ pub struct Vehicle {
 -   `dir`: The direction from which the vehicle is approaching the intersection.
 -   `turn`: The turn the vehicle intends to make at the intersection.
 -   `x`, `y`: The current coordinates of the vehicle.
--   `passed`: A boolean that is true if the vehicle has passed the intersection.
 -   `path`: A vector of coordinates that the vehicle will follow.
 -   `path_index`: The index of the current target coordinate in the `path` vector.
 
@@ -112,8 +110,6 @@ if !should_stop {
                 v.y += dy.signum() * step;
             }
         }
-    } else {
-        v.passed = true;
     }
 }
 ```
