@@ -28,6 +28,26 @@ fn main() -> Result<(), String> {
         .build()
         .map_err(|e| e.to_string())?;
 
+    let texture_creator = canvas.texture_creator();
+
+    // Create a texture for the static background
+    let mut static_background = texture_creator
+        .create_texture_target(None, WINDOW_WIDTH, WINDOW_HEIGHT)
+        .map_err(|e| e.to_string())?;
+
+    // Draw the static elements to the new texture
+    canvas.with_texture_canvas(&mut static_background, |texture_canvas| {
+        // Clear the texture
+        texture_canvas.set_draw_color(Color::RGB(200, 200, 200));
+        texture_canvas.clear();
+
+        // Draw all the static parts
+        draw_roads(texture_canvas).unwrap();
+        draw_lanes(texture_canvas).unwrap();
+        draw_lane_dividers(texture_canvas).unwrap();
+        draw_intersection_elements(texture_canvas).unwrap();
+    }).map_err(|e| e.to_string())?;
+
     let mut event_pump = sdl.event_pump()?;
     let mut world = World::new();
     let mut last_spawn_time = Instant::now();
@@ -77,27 +97,22 @@ fn main() -> Result<(), String> {
         // Update simulation
         world.update();
 
-        // Clear background
-        canvas.set_draw_color(Color::RGB(200, 200, 200));
-        canvas.clear();
+        // Copy the pre-rendered background
+        canvas.copy(&static_background, None, None)?;
 
-        draw_roads(&mut canvas)?;
-        draw_lanes(&mut canvas)?;
-        draw_lane_dividers(&mut canvas)?;
-        draw_intersection_elements(&mut canvas)?;
+        // Draw dynamic elements
         draw_traffic_lights(&mut canvas, &world.controller.current)?;
         draw_vehicles(&mut canvas, &world.vehicles)?;
 
         // Overlay: show variables
-        let textures_creator = canvas.texture_creator();
         let overlay_text = format!(
             "Vehicles: {}",
             world.vehicles.len()
         );
-        render_text_overlay(&mut canvas, &font, &textures_creator, &overlay_text, 10, 10)?;
+        render_text_overlay(&mut canvas, &font, &texture_creator, &overlay_text, 10, 10)?;
 
         let random_gen_text = format!("Random Generation (G): {}", if random_generation_on { "ON" } else { "OFF" });
-        render_text_overlay(&mut canvas, &font, &textures_creator, &random_gen_text, 10, 35)?;
+        render_text_overlay(&mut canvas, &font, &texture_creator, &random_gen_text, 10, 35)?;
 
 
         // New: Static Info Overlay (Colors and Directions)
@@ -105,7 +120,7 @@ fn main() -> Result<(), String> {
 
         // Colors and Turns Legend
         let colors_legend_title = "Vehicle Colors (Turn):";
-        render_text_overlay(&mut canvas, &font, &textures_creator, colors_legend_title, 10, y_offset as i32)?;
+        render_text_overlay(&mut canvas, &font, &texture_creator, colors_legend_title, 10, y_offset as i32)?;
         y_offset += 20;
 
         let turns = [
@@ -119,7 +134,7 @@ fn main() -> Result<(), String> {
             canvas.fill_rect(Rect::new(10, y_offset as i32, 15, 15))?; // Small square for color
 
             let info_text = format!(" - {}", turn_name);
-            render_text_overlay(&mut canvas, &font, &textures_creator, &info_text, 30, y_offset as i32)?;
+            render_text_overlay(&mut canvas, &font, &texture_creator, &info_text, 30, y_offset as i32)?;
             y_offset += 20;
         }
 

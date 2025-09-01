@@ -36,19 +36,33 @@ The `World` struct has an `update` method that is called in each frame of the ma
 
 The main loop is in the `main` function in `src/main.rs`. It is a standard game loop that handles events, updates the world state, and renders the scene.
 
+The rendering process is optimized for performance. Instead of redrawing every element from scratch in each frame, the static background (roads, lanes, etc.) is pre-rendered to a texture before the loop starts. Inside the loop, this texture is copied to the canvas in a single, fast operation. Then, only the dynamic elements (vehicles and traffic lights) and the UI text are drawn on top.
+
+This approach is much more efficient as it avoids making many individual drawing calls for static scenery on every frame.
+
 ```rust
 'running: loop {
+    // Handle user input events
     for event in event_pump.poll_iter() {
-        // Handle events
+        // ...
     }
 
-    // Update simulation
+    // Update the simulation state (vehicle positions, traffic lights)
     world.update();
 
-    // Render the scene
-    canvas.clear();
-    draw_roads(&mut canvas)?;
-    // ...
+    // --- Render the scene ---
+
+    // 1. Copy the pre-rendered static background to the screen
+    canvas.copy(&static_background, None, None)?;
+
+    // 2. Draw dynamic elements on top of the background
+    draw_traffic_lights(&mut canvas, &world.controller.current)?;
+    draw_vehicles(&mut canvas, &world.vehicles)?;
+
+    // 3. Draw the UI overlay
+    render_text_overlay(/* ... */)?;
+
+    // 4. Present the final frame
     canvas.present();
 }
 ```
