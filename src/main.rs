@@ -31,6 +31,7 @@ fn main() -> Result<(), String> {
     let mut event_pump = sdl.event_pump()?;
     let mut world = World::new();
     let mut last_spawn_time = Instant::now();
+    let mut random_generation_on = false;
 
     // Load font for overlay
     let font = ttf_context.load_font("assets/fonts/DejaVuSans.ttf", 12)?;
@@ -55,10 +56,22 @@ fn main() -> Result<(), String> {
                         };
                         handle_spawn_key(&mut world, &mut last_spawn_time, random_dir);
                     }
+                    Some(Keycode::G) => random_generation_on = !random_generation_on,
                     _ => {}
                 },
                 _ => {}
             }
+        }
+
+        if random_generation_on && last_spawn_time.elapsed() >= SPAWN_TIMEOUT {
+            let mut rng = rand::thread_rng();
+            let random_dir = match rng.gen_range(0..4) {
+                0 => Direction::North,
+                1 => Direction::South,
+                2 => Direction::East,
+                _ => Direction::West,
+            };
+            handle_spawn_key(&mut world, &mut last_spawn_time, random_dir);
         }
 
         // Update simulation
@@ -83,8 +96,12 @@ fn main() -> Result<(), String> {
         );
         render_text_overlay(&mut canvas, &font, &textures_creator, &overlay_text, 10, 10)?;
 
+        let random_gen_text = format!("Random Generation (G): {}", if random_generation_on { "ON" } else { "OFF" });
+        render_text_overlay(&mut canvas, &font, &textures_creator, &random_gen_text, 10, 35)?;
+
+
         // New: Static Info Overlay (Colors and Directions)
-        let mut y_offset = 35; // Starting Y position for info, below the vehicle count
+        let mut y_offset = 60; // Starting Y position for info, below the vehicle count
 
         // Colors and Turns Legend
         let colors_legend_title = "Vehicle Colors (Turn):";
