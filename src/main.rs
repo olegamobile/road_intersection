@@ -10,6 +10,8 @@ use sdl2::video::{Window, WindowContext};
 use sdl2::ttf::Font;
 use road_intersection::vehicle::Vehicle;
 
+const SPAWN_TIMEOUT: Duration = Duration::from_millis(300);
+
 fn main() -> Result<(), String> {
     let sdl = sdl2::init()?;
     let video = sdl.video()?;
@@ -113,7 +115,7 @@ fn main() -> Result<(), String> {
 }
 
 fn handle_spawn_key(world: &mut World, last_spawn_time: &mut Instant, direction: Direction) {
-    if last_spawn_time.elapsed() >= Duration::from_millis(500) {
+    if last_spawn_time.elapsed() >= SPAWN_TIMEOUT {
         world.spawn_vehicle(direction);
         *last_spawn_time = Instant::now();
     }
