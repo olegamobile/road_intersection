@@ -10,7 +10,7 @@ use sdl2::video::{Window, WindowContext};
 use sdl2::ttf::Font;
 use road_intersection::vehicle::Vehicle;
 
-const SPAWN_TIMEOUT: Duration = Duration::from_millis(500);
+const SPAWN_TIMEOUT: Duration = Duration::from_millis(250);
 
 fn main() -> Result<(), String> {
     let sdl = sdl2::init()?;

@@ -20,8 +20,8 @@ The `TrafficLightController` (located in `src/traffic_light.rs`) is responsible 
 
 The `update()` method of the `TrafficLightController` implements the following logic:
 
-1.  **Max Phase Duration:** Each green light phase has a maximum duration of 5 seconds. If this time elapses, the light will attempt to switch to the next phase.
-2.  **No Cars Waiting:** If there are no vehicles waiting at the current green light's approach for 500 milliseconds, the light will switch to the next phase. This helps optimize flow when there's no traffic for a particular direction.
+1.  **Max Phase Duration:** Each green light phase has a maximum duration of 3 seconds. If this time elapses, the light will attempt to switch to the next phase.
+2.  **No Cars Waiting:** If there are no vehicles waiting at the current green light's approach for 200 milliseconds, the light will switch to the next phase. This helps optimize flow when there's no traffic for a particular direction.
 3.  **Intersection Clearing:** If it's time to switch to a new phase (either due to max duration or no cars waiting), but there are vehicles currently *within the intersection* or *on any stop line*, the traffic light will first enter an "AllRed" state. It will remain "AllRed" until the intersection is completely clear of vehicles. Once clear, it will then proceed to the next scheduled green light direction.
 4.  **Normal Cycle:** In the absence of the above conditions, the traffic lights cycle through the directions in a fixed order: North -> South -> East -> West -> North.
 

@@ -108,7 +108,7 @@ fn generate_west_path(turn: Turn) -> Vec<(i32, i32)> {
     path.push((INTERSECTION_X_START as i32 - VEHICLE_SIZE as i32 - 5, y)); // stopping point
     match turn {
         Turn::Straight => {
-            path.push((INTERSECTION_X_START as i32 + 1, y));
+            path.push((INTERSECTION_X_START as i32 + 6, y));
             path.push((WINDOW_WIDTH as i32 + VEHICLE_SIZE as i32, y));
         }
         Turn::Left => {
