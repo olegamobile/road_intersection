@@ -11,6 +11,7 @@ pub struct TrafficLightController {
     max_phase_duration: Duration,
     last_car_cleared_time: Option<Instant>,
     last_green_direction: Direction,
+    time_skipped: Duration,
 }
 
 impl TrafficLightController {
@@ -21,6 +22,15 @@ impl TrafficLightController {
             max_phase_duration: MAX_PHASE_DURATION, // Initialize maximum phase duration
             last_car_cleared_time: None,
             last_green_direction: Direction::West, // Initialize to West so North is the first green
+            time_skipped: Duration::from_secs(0),
+        }
+    }
+
+    pub fn toggle_pause(&mut self, paused: bool) {
+        if paused {
+            self.time_skipped = self.last_switch.elapsed();
+        } else {
+            self.last_switch = Instant::now() - self.time_skipped;
         }
     }
 

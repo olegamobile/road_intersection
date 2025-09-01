@@ -57,6 +57,10 @@ impl World {
         }
     }
 
+    pub fn toggle_pause(&mut self, paused: bool) {
+        self.controller.toggle_pause(paused);
+    }
+
     fn count_waiting_vehicles(&self) -> u32 {
         let mut waiting_vehicles = 0;
         for v in &self.vehicles {

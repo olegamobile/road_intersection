@@ -52,6 +52,7 @@ fn main() -> Result<(), String> {
     let mut world = World::new();
     let mut last_spawn_time = Instant::now();
     let mut random_generation_on = false;
+    let mut paused = false;
 
     // Load font for overlay
     let font = ttf_context.load_font("assets/fonts/DejaVuSans.ttf", 12)?;
@@ -62,6 +63,10 @@ fn main() -> Result<(), String> {
                 Event::Quit { .. } => break 'running,
                 Event::KeyDown { keycode, .. } => match keycode {
                     Some(Keycode::Escape) => break 'running,
+                    Some(Keycode::P) => {
+                        paused = !paused;
+                        world.toggle_pause(paused);
+                    }
                     Some(Keycode::Up) => handle_spawn_key(&mut world, &mut last_spawn_time, Direction::South),
                     Some(Keycode::Down) => handle_spawn_key(&mut world, &mut last_spawn_time, Direction::North),
                     Some(Keycode::Left) => handle_spawn_key(&mut world, &mut last_spawn_time, Direction::East),
@@ -83,19 +88,21 @@ fn main() -> Result<(), String> {
             }
         }
 
-        if random_generation_on && last_spawn_time.elapsed() >= SPAWN_TIMEOUT {
-            let mut rng = rand::thread_rng();
-            let random_dir = match rng.gen_range(0..4) {
-                0 => Direction::North,
-                1 => Direction::South,
-                2 => Direction::East,
-                _ => Direction::West,
-            };
-            handle_spawn_key(&mut world, &mut last_spawn_time, random_dir);
-        }
+        if !paused {
+            if random_generation_on && last_spawn_time.elapsed() >= SPAWN_TIMEOUT {
+                let mut rng = rand::thread_rng();
+                let random_dir = match rng.gen_range(0..4) {
+                    0 => Direction::North,
+                    1 => Direction::South,
+                    2 => Direction::East,
+                    _ => Direction::West,
+                };
+                handle_spawn_key(&mut world, &mut last_spawn_time, random_dir);
+            }
 
-        // Update simulation
-        world.update();
+            // Update simulation
+            world.update();
+        }
 
         // Copy the pre-rendered background
         canvas.copy(&static_background, None, None)?;
@@ -114,9 +121,12 @@ fn main() -> Result<(), String> {
         let random_gen_text = format!("Random Generation (G): {}", if random_generation_on { "ON" } else { "OFF" });
         render_text_overlay(&mut canvas, &font, &texture_creator, &random_gen_text, 10, 35)?;
 
+        let paused_text = format!("Paused (P): {}", if paused { "ON" } else { "OFF" });
+        render_text_overlay(&mut canvas, &font, &texture_creator, &paused_text, 10, 60)?;
+
 
         // New: Static Info Overlay (Colors and Directions)
-        let mut y_offset = 60; // Starting Y position for info, below the vehicle count
+        let mut y_offset = 85; // Starting Y position for info, below the vehicle count
 
         // Colors and Turns Legend
         let colors_legend_title = "Vehicle Colors (Turn):";
