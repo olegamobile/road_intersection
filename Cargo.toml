@@ -3,8 +3,16 @@ name = "road_intersection"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+crate-type = ["cdylib"]
+
 [dependencies]
 sdl2 = { version = "0.38", features = ["ttf"] }
 rand = "0.8.5"
 sdl = "0.3.6"
 
+[package.metadata.android]
+apk_label = "Road Intersection"
+assets = "assets"
+target_sdk_version = 34 # For Android 14
+min_sdk_version = 21 # For Android 5.0
