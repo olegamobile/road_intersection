@@ -1,18 +1,22 @@
 [package]
 name = "road_intersection"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [lib]
-crate-type = ["cdylib"]
+name = "road_intersection"
+crate-type = ["cdylib", "rlib"]  # cdylib needed for cargo-apk
+
+[[bin]]
+name = "road_intersection"
+path = "src/main.rs"
 
 [dependencies]
-sdl2 = { version = "0.38", features = ["ttf"] }
+sdl2 = { version = "0.38", features = ["bundled"] }
 rand = "0.8.5"
-sdl = "0.3.6"
 
 [package.metadata.android]
 apk_label = "Road Intersection"
 assets = "assets"
-target_sdk_version = 34 # For Android 14
-min_sdk_version = 21 # For Android 5.0
+target_sdk_version = 34
+min_sdk_version = 21

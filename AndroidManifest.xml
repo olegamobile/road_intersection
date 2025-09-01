@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.roadintersection"
+    android:versionCode="1"
+    android:versionName="0.1">
+
+    <uses-sdk
+        android:minSdkVersion="23"
+        android:targetSdkVersion="33" />
+
+    <!-- Permissions (add as needed) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:label="Road Intersection"
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="true"
+        android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+
+        <!-- SDL2 main activity -->
+        <activity android:name="org.libsdl.app.SDLActivity"
+            android:label="Road Intersection"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|locale"
+            android:screenOrientation="landscape"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+            
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+
+    </application>
+</manifest>

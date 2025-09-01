@@ -1,13 +1,14 @@
 use rand::Rng;
 use road_intersection::{Direction, Turn, World, WINDOW_WIDTH, WINDOW_HEIGHT, ROAD_WIDTH, ROAD_X, ROAD_Y, INTERSECTION_X_START, INTERSECTION_Y_START, INTERSECTION_X_END, INTERSECTION_Y_END, SOUTHBOUND_LANE_X, NORTHBOUND_LANE_X, WESTBOUND_LANE_Y, EASTBOUND_LANE_Y};
+
+
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use std::time::{Duration, Instant};
-use sdl2::render::{Canvas, TextureCreator};
-use sdl2::video::{Window, WindowContext};
-use sdl2::ttf::Font;
+use sdl2::render::{Canvas};
+use sdl2::video::{Window};
 use road_intersection::vehicle::Vehicle;
 
 const SPAWN_TIMEOUT: Duration = Duration::from_millis(250);
@@ -15,7 +16,6 @@ const SPAWN_TIMEOUT: Duration = Duration::from_millis(250);
 fn main() -> Result<(), String> {
     let sdl = sdl2::init()?;
     let video = sdl.video()?;
-    let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
 
     let window = video
         .window("Road Intersection", WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -52,9 +52,6 @@ fn main() -> Result<(), String> {
     let mut world = World::new();
     let mut last_spawn_time = Instant::now();
     let mut random_generation_on = false;
-
-    // Load font for overlay
-    let font = ttf_context.load_font("assets/fonts/DejaVuSans.ttf", 12)?;
 
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -103,41 +100,6 @@ fn main() -> Result<(), String> {
         // Draw dynamic elements
         draw_traffic_lights(&mut canvas, &world.controller.current)?;
         draw_vehicles(&mut canvas, &world.vehicles)?;
-
-        // Overlay: show variables
-        let overlay_text = format!(
-            "Vehicles: {}",
-            world.vehicles.len()
-        );
-        render_text_overlay(&mut canvas, &font, &texture_creator, &overlay_text, 10, 10)?;
-
-        let random_gen_text = format!("Random Generation (G): {}", if random_generation_on { "ON" } else { "OFF" });
-        render_text_overlay(&mut canvas, &font, &texture_creator, &random_gen_text, 10, 35)?;
-
-
-        // New: Static Info Overlay (Colors and Directions)
-        let mut y_offset = 60; // Starting Y position for info, below the vehicle count
-
-        // Colors and Turns Legend
-        let colors_legend_title = "Vehicle Colors (Turn):";
-        render_text_overlay(&mut canvas, &font, &texture_creator, colors_legend_title, 10, y_offset as i32)?;
-        y_offset += 20;
-
-        let turns = [
-            ("Left", Color::RGB(255, 255, 0)),    // Yellow
-            ("Right", Color::RGB(0, 255, 255)),   // Cyan
-            ("Straight", Color::RGB(255, 0, 255)), // Magenta
-        ];
-
-        for (turn_name, color) in &turns {
-            canvas.set_draw_color(*color);
-            canvas.fill_rect(Rect::new(10, y_offset as i32, 15, 15))?; // Small square for color
-
-            let info_text = format!(" - {}", turn_name);
-            render_text_overlay(&mut canvas, &font, &texture_creator, &info_text, 30, y_offset as i32)?;
-            y_offset += 20;
-        }
-
 
         canvas.present();
         ::std::thread::sleep(Duration::from_millis(16));
@@ -252,28 +214,5 @@ fn draw_vehicles(canvas: &mut Canvas<Window>, vehicles: &Vec<Vehicle>) -> Result
         canvas.set_draw_color(color);
         canvas.fill_rect(Rect::new(v.x, v.y, 20, 20))?;
     }
-    Ok(())
-}
-
-fn render_text_overlay(
-    canvas: &mut Canvas<Window>,
-    font: &Font,
-    texture_creator: &TextureCreator<WindowContext>,
-    text: &str,
-    x: i32,
-    y: i32,
-) -> Result<(), String> {
-    let surface = font
-        .render(text)
-        .blended(Color::RGB(0, 0, 0)) // Black text
-        .map_err(|e| e.to_string())?;
-    let texture = texture_creator
-        .create_texture_from_surface(&surface)
-        .map_err(|e| e.to_string())?;
-    canvas.copy(
-        &texture,
-        None,
-        Some(Rect::new(x, y, surface.width(), surface.height())),
-    )?;
     Ok(())
 }
