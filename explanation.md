@@ -93,7 +93,7 @@ When a vehicle is spawned, a path is generated for it using the `generate_path` 
 
 The `update_vehicle_positions` method in `src/lib.rs` is responsible for moving the vehicles. In each frame, this method updates the position of each vehicle based on its path and speed.
 
-The vehicle moves towards the next waypoint in its path. When it reaches a waypoint, the `path_index` is incremented to target the next waypoint.
+The vehicle moves towards the next waypoint in its path. The movement is restricted to horizontal and vertical directions. When it reaches a waypoint, the `path_index` is incremented to target the next waypoint. The new logic is simpler and avoids floating-point calculations.
 
 ```rust
 if !should_stop {
@@ -101,12 +101,16 @@ if !should_stop {
         let target = v.path[v.path_index + 1];
         let dx = target.0 - v.x;
         let dy = target.1 - v.y;
-        let dist = ((dx * dx + dy * dy) as f32).sqrt();
-        if dist < 5.0 {
+
+        if dx.abs() < 5 && dy.abs() < 5 {
             v.path_index += 1;
         } else {
-            v.x += (dx as f32 / dist * 5.0) as i32;
-            v.y += (dy as f32 / dist * 5.0) as i32;
+            let step = 5;
+            if dx != 0 {
+                v.x += dx.signum() * step;
+            } else if dy != 0 {
+                v.y += dy.signum() * step;
+            }
         }
     } else {
         v.passed = true;
